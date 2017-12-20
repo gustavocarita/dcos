@@ -1,0 +1,43 @@
+#!/bin/bash
+green=`tput setaf 2`;
+blue=`tput setaf 4`;
+reset=`tput sgr0`;
+
+RESOURCEGROUP='test_solid';
+LOCATION='eastus';
+CLUSTERNAME='solidcluster';
+
+while getopts 'r:l:c:' flag; do
+  case "${flag}" in
+    r) RESOURCEGROUP="${OPTARG}" ;;
+    l) LOCATION="${OPTARG}" ;;
+    c) CLUSTERNAME="${OPTARG}" ;;
+    *) echo "Unexpected option ${flag}" ;;
+  esac
+done
+
+echo "${blue}[DCOS Parameters]${reset}";
+echo "Resource Group: $RESOURCEGROUP";
+echo "Location: $LOCATION";
+echo "Cluster Name: $CLUSTERNAME";
+
+echo "${green}[DCOS Cluster]${reset} Creating Resource Group...";
+az group create --name $RESOURCEGROUP \
+                --location $LOCATION;
+
+echo "${green}[DCOS Cluster]${reset} Finished.";
+echo "${green}[DCOS Cluster]${reset} Adding DCOS to the recently created Resource Group.";
+az acs create --orchestrator-type dcos \
+              --resource-group $RESOURCEGROUP \
+              --name $CLUSTERNAME \
+              --generate-ssh-keys;
+
+echo "${green}[DCOS Cluster]${reset} Getting the IP for the DCOS management server.";
+ip=$(az network public-ip list --resource-group $RESOURCEGROUP \
+                               --query "[?contains(name,'dcos-master')].[ipAddress]" -o tsv);
+
+echo "${green}[DCOS Cluster]${reset} Getting the IP for Cluster] Establishing a secure connection...";
+sudo ssh -i ~/.ssh/id_rsa -fNL 80:localhost:80 -p 2200 -y azureuser@$ip;
+echo "${green}[DCOS Cluster]${reset} Server running on http://localhost";
+
+dcos config set core.dcos_url http://localhost;

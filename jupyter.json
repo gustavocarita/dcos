@@ -1,0 +1,32 @@
+{
+  "id": "jupyter",
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "jupyter/datascience-notebook",
+      "network": "BRIDGE",
+      "portMappings": [{
+        "hostPort": 8888,
+        "containerPort": 8888,
+        "protocol": "tcp"
+      }]
+    }
+  },
+  "acceptedResourceRoles": ["slave_public"],
+  "instances": 1,
+  "cpus": 3,
+  "mem": 1000,
+  "args": [
+    "start-notebook.sh"
+  ],
+  "healthChecks": [{
+    "gracePeriodSeconds": 300,
+    "intervalSeconds": 60,
+    "timeoutSeconds": 20,
+    "maxConsecutiveFailures": 3,
+    "portIndex": 0,
+    "path": "/",
+    "protocol": "HTTP",
+    "ignoreHttp1xx": false
+  }]
+}
